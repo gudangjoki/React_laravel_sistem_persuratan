@@ -37,7 +37,7 @@ class OtpForgetPassword extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'view.email-otp',
+            view: 'email-otp',
             with: ['name' => $this->name, 'otp' => $this->otp],
         );
     }

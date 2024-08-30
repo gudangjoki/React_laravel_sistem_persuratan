@@ -1,3 +1,3 @@
 Hey {{$name}}, 
-Can your Laravel app send emails yet? 😉 
+Ini Kode {{$otp}} Ganti Password Kamu Ya Batasnya 2 menit 😉 
 Mailtrap

@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Mail\OtpForgetPassword;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -25,6 +27,7 @@ class AuthController extends Controller
                 // 'name' => 'required|string|max:255',
                 'username' => 'required|string|max:255|unique:users',
                 'password' => 'required|string',
+                'name' => 'required|string',
                 'email' => 'required|email',
                 // 'address' => 'required|string|max:100',
             ]);
@@ -42,29 +45,45 @@ class AuthController extends Controller
             $user = new User();
             $user->email = $validate['email'];
             $user->username = $validate['username'];
+            $user->name = $validate['name'];
             $user->password = $password;
             $user->save();
 
-            return redirect('register')->with('status', 'Your account has been created');
+            if($user) {
+                return response()->json([
+                    'success' => true,
+                    'user'    => $user,  
+                ], 201);
+            }
 
         } catch(\Exception $e) {
-            return redirect()->back()->withErrors(['error' => 'Failed to register user', 'message' => $e->getMessage()]);
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
         }
     }
 
     public function authenticated(Request $request) {
         $credentials = $request->only('email', 'password');
+        $access_token_exp_date = Carbon::now()->addMinute()->timestamp;
+        $refresh_token_exp_date = Carbon::now()->addDays(7)->timestamp;
         try {
-            $token = JWTAuth::attempt($credentials);
+            $token = auth()->guard('api')->attempt($credentials, ['exp' => $access_token_exp_date]);
             if(!$token) {
                 return response()->json(['message' => 'Login credential invalid'], 400);
             }
+
+            $refresh_token = Str::random(128);
             
             return response()->json([
-                'token' => $token, 
+                'access_token' => $token,
+                'access_token_exp' => $access_token_exp_date,
+                'refresh_token' => $refresh_token,
+                'refresh_token_exp' => $refresh_token_exp_date,
+                'success' => true,
                 'message' => 'Login credential is valid'], 200);
         } catch (\Exception $e) {
-            return response()->json(['message' => 'internal server error'], 500);
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
@@ -75,7 +94,7 @@ class AuthController extends Controller
 
         $email = $validate['email'];
 
-        $email_db = User::where('email', $email)->first();
+        $email_db = User::where('email', $email)->first()->email;
         if ($email == $email_db) {
             $otp = '594805';
             $new_otp = new OtpForgetPassword($email, $otp);
@@ -94,7 +113,7 @@ class AuthController extends Controller
     public function check_otp(Request $request) {
         $otp = Cache::get('otp', 'default');
         if($otp == 'default') {
-            return response()->json(['message' => 'internal server error'], 500);
+            return response()->json(['success' => false, 'message' => 'otp not found or timeout'], 404);
         }
 
         $validator = $request->validate([
@@ -102,10 +121,10 @@ class AuthController extends Controller
         ]);
 
         if($otp != $validator['otp']) {
-            return response()->json(['message' => 'otp is not matching'], 400);
+            return response()->json(['success' => false, 'message' => 'otp is not matching'], 400);
         }
 
-        return response()->json(['message' => 'otp is matching'], 200);
+        return response()->json(['success' => true, 'message' => 'otp is matching'], 200);
     }
 
     public function change_password(Request $request) {
@@ -147,5 +166,17 @@ class AuthController extends Controller
         Cache::forget('otp');
     
         return response()->json(['message' => 'Password successfully changed'], 200);
+    }
+
+    public function refresh_token(Request $request) {
+        $refresh_token = $request->refresh_token;
+        if (!$refresh_token) {
+            return response()->json(['error' => 'refresh token is missing'], 400);
+        }
+
+    }
+
+    public function logout() {
+
     }
 }
