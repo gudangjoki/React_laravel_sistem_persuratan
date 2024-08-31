@@ -26,8 +26,9 @@ class ParseJwtTokenMiddleware
             }
     
             $payload = JWTAuth::setToken($token)->getPayload();
-
-            $request->attributes->set('jwt_payload', $payload);
+            $user = auth()->user();
+            $request->attributes->add(['jwt_payload' => $payload]);
+            // $request->attributes->set('jwt_payload', $payload);
 
         } catch (TokenExpiredException $e) {
             return response()->json(['error' => 'Token has expired'], 404);

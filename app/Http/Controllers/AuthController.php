@@ -8,6 +8,8 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Str;
@@ -65,15 +67,46 @@ class AuthController extends Controller
 
     public function authenticated(Request $request) {
         $credentials = $request->only('email', 'password');
-        $access_token_exp_date = Carbon::now()->addMinute()->timestamp;
-        $refresh_token_exp_date = Carbon::now()->addDays(7)->timestamp;
+        $exp_date_access_token = Carbon::now()->addMinute();
+        $access_token_exp_date = $exp_date_access_token->timestamp;
+        $exp_date_refresh_token = Carbon::now()->addDays(7);
+        $refresh_token_exp_date = $exp_date_refresh_token->timestamp;
         try {
             $token = auth()->guard('api')->attempt($credentials, ['exp' => $access_token_exp_date]);
             if(!$token) {
                 return response()->json(['message' => 'Login credential invalid'], 400);
             }
 
+            $email = $request->email;
+
             $refresh_token = Str::random(128);
+            $encrypted_refresh_token = bcrypt($refresh_token);
+
+            $check_refresh_token = DB::table('refresh_tokens')->where('email', $email)->get(['refresh_token', 'refresh_token_exp']);
+
+            do {
+                $generated_uuid_refresh_token = Str::uuid();
+            } while (DB::table('refresh_tokens')->where('id_refresh_token', $generated_uuid_refresh_token)->first());
+
+            if (count($check_refresh_token) == 0) {
+                DB::table('refresh_tokens')->insert([
+                    'id_refresh_token' => $generated_uuid_refresh_token,
+                    'refresh_token' => $encrypted_refresh_token,
+                    'email' => $email,
+                    'refresh_token_exp' => $exp_date_refresh_token
+                ]);
+            } else {
+                $parsed_refresh_token_exp = Carbon::parse($check_refresh_token[0]->refresh_token_exp);
+
+                if ($parsed_refresh_token_exp->timestamp <= Carbon::now()->timestamp) {
+                    DB::table('refresh_tokens')->update([
+                        // 'id_refresh_token' => Str::uuid(),
+                        // 'email' => $email,
+                        'refresh_token' => $encrypted_refresh_token,
+                        'refresh_token_exp' => $exp_date_refresh_token
+                    ]);
+                }
+            }
             
             return response()->json([
                 'access_token' => $token,
@@ -169,14 +202,63 @@ class AuthController extends Controller
     }
 
     public function refresh_token(Request $request) {
-        $refresh_token = $request->refresh_token;
-        if (!$refresh_token) {
+        // if header access token not same with updated one, return token will be invalid 401
+        $refresh_token_from_request = $request->refresh_token;
+        if (!$refresh_token_from_request) {
             return response()->json(['error' => 'refresh token is missing'], 400);
-        }
+        }   
 
+        try {
+            $payload = $request->get('jwt_payload');
+            $refreshed_token_email = $payload['sub'];
+            $refresh_token_exp_db = DB::table('refresh_tokens')->where('email', $refreshed_token_email)->pluck('refresh_token_exp')[0];
+            $refresh_token_db = DB::table('refresh_tokens')->where('email', $refreshed_token_email)->pluck('refresh_token')[0];
+            
+            if ($refresh_token_db == null && $refresh_token_exp_db == null) {
+                return response()->json([
+                    'status_code' => 401, 
+                    'message' => 'refresh token not found'
+                ], 401);
+            }
+
+            if (!Hash::check($refresh_token_from_request, $refresh_token_db)) {
+                return response()->json([
+                    'status_code' => 400, 
+                    'message' => 'Refresh token from request does not match the one in the database'
+                ], 400);
+            }
+    
+            if (Carbon::parse($refresh_token_exp_db)->timestamp <= Carbon::now()->timestamp) {
+                return response()->json([
+                    'status_code' => 400, 
+                    'message' => 'refresh token expired'
+                ], 400);
+            }
+
+            $current_token = JWTAuth::getToken();
+            $refreshed_access_token = JWTAuth::refresh($current_token);
+    
+            return response()->json([
+                'access_token' => $refreshed_access_token,
+                'access_token_exp_in' =>Carbon::now()->addHour(),
+                'access_token_exp_in_with_timestamp' =>Carbon::now()->addHour()->timestamp,
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function logout() {
+        try {
+            JWTAuth::invalidate(JWTAuth::getToken());
 
+            return response()->json([
+                'status_code' => 200,
+                'message' => 'user logout and access token will be blacklist'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 }

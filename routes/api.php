@@ -16,4 +16,6 @@ Route::middleware(['auth.jwt'])->group(function() {
 Route::middleware(['parse.jwt'])->group(function() {
     Route::post('/forget_password', [AuthController::class, 'forget_password']);
     Route::post('/check_otp', [AuthController::class, 'check_otp']);
+    Route::post('/refresh_token', [AuthController::class, 'refresh_token']);
+    Route::delete('/logout', [AuthController::class, 'logout']);
 });
