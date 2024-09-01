@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LetterManagementController;
+use App\Http\Controllers\RoleManagementController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -18,4 +21,16 @@ Route::middleware(['parse.jwt'])->group(function() {
     Route::post('/check_otp', [AuthController::class, 'check_otp']);
     Route::post('/refresh_token', [AuthController::class, 'refresh_token']);
     Route::delete('/logout', [AuthController::class, 'logout']);
+
+    Route::get('/keywords', [LetterManagementController::class, 'get_all_keywords']);
+    Route::get('/letter/{uuid}', [LetterManagementController::class, 'view_detail']);
+    Route::put('/letter/{uuid}', [LetterManagementController::class, 'edit_detail']);
+    Route::post('/letter', [LetterManagementController::class, 'create_letter']);
+    Route::get('/letters', [LetterManagementController::class, 'get_all_letters']);
+    
+    Route::get('/count_letter', [DashboardController::class, 'checkCountEachLetterType']);
+    Route::get('/letters/{letter_id_type}', [DashboardController::class, 'getLetterByTypeParameterUrl']);
+
+    Route::post('/role', [RoleManagementController::class], 'createNewRole');
+    Route::get('/roles', [RoleManagementController::class, 'getAllRoles']);
 });

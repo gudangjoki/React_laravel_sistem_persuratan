@@ -1,0 +1,25 @@
+CREATE VIEW view_letter_combined AS
+SELECT 
+    letters.letter_id, 
+    letters.letter_no, 
+    letters.letter_title, 
+    letters.letter_path, 
+    letter_types.letter_type_name AS 'letter_type', 
+    users.email AS 'author_email', 
+    users.name AS 'author_name', 
+    users.username AS 'author_username',
+    letters.created_at AS 'letter_created_at', 
+    letters.updated_at AS 'letter_updated_at' 
+FROM 
+    letters 
+LEFT JOIN 
+    letter_types ON letters.letter_id_type = letter_types.id 
+LEFT JOIN 
+    users ON letters.email = users.email;
+
+
+dashboard count letter:
+
+SELECT COUNT(letter_id) AS total_letter_type, letter_type
+FROM view_letter_combined
+GROUP BY letter_type;

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('letters', function (Blueprint $table) {
             $table->uuid('letter_id')->primary();
-            // $table->string('letter_number');
+            $table->string('letter_no')->unique();
             $table->string('letter_title');
             $table->string('letter_path');
             $table->unsignedBigInteger('letter_id_type');
