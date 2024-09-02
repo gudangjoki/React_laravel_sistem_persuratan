@@ -11,12 +11,12 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::middleware(['auth.jwt'])->group(function() {
+Route::middleware(['auth.jwt', 'cors'])->group(function() {
     Route::post('/register/acc', [AuthController::class, 'create_new_account']);
     Route::post('/login', [AuthController::class, 'authenticated']);
 });
 
-Route::middleware(['parse.jwt'])->group(function() {
+Route::middleware(['parse.jwt', 'cors'])->group(function() {
     Route::post('/forget_password', [AuthController::class, 'forget_password']);
     Route::post('/check_otp', [AuthController::class, 'check_otp']);
     Route::post('/refresh_token', [AuthController::class, 'refresh_token']);
@@ -33,4 +33,7 @@ Route::middleware(['parse.jwt'])->group(function() {
 
     Route::post('/role', [RoleManagementController::class], 'createNewRole');
     Route::get('/roles', [RoleManagementController::class, 'getAllRoles']);
+    Route::get('/permissions', [RoleManagementController::class, 'getAllPermissions']);
+
+    Route::get('/me', [DashboardController::class, 'getSelfAccountInformation']);
 });

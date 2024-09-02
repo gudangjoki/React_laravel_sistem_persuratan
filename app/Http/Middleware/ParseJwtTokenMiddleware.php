@@ -26,7 +26,10 @@ class ParseJwtTokenMiddleware
             }
     
             $payload = JWTAuth::setToken($token)->getPayload();
-            $user = auth()->user();
+            // $user = auth()->user();
+
+            error_log(JWTAuth::getPayload()->get('roles')[0]);
+            
             $request->attributes->add(['jwt_payload' => $payload]);
             // $request->attributes->set('jwt_payload', $payload);
 

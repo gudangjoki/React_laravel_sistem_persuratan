@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\Cors;
 use App\Http\Middleware\ParseJwtTokenMiddleware;
 use App\Http\Middleware\UserIsAuthenticated;
 use Illuminate\Foundation\Application;
@@ -21,7 +22,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'parse.jwt' => ParseJwtTokenMiddleware::class,
-            'auth.jwt' => UserIsAuthenticated::class
+            'auth.jwt' => UserIsAuthenticated::class,
+            'cors' => Cors::class
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

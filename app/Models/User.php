@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
@@ -66,6 +67,13 @@ class User extends Authenticatable implements JWTSubject
     */
     public function getJWTCustomClaims()
     {
-        return [];
+        $roles = DB::table('user_roles')
+            ->where('email', $this->email)
+            ->leftJoin('roles', 'user_roles.role_id', '=', 'roles.id')
+            ->pluck('roles.role_name');
+
+        return [
+            'roles' => $roles
+        ];
     }
 }

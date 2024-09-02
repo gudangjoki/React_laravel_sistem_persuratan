@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\LetterInformation;
-use GuzzleHttp\Psr7\Request;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
@@ -25,5 +26,14 @@ class DashboardController extends Controller
 
     public function getLetterByTypeParameterUrl(Request $request, string $letter_id_type) {
         //
+    }
+
+    public function getSelfAccountInformation(Request $request) {
+        $payload = $request->get('jwt_payload');
+
+        $email_current_login = $payload['sub'];
+        $user_information = User::where('email', $email_current_login)->first();
+
+        return $user_information;
     }
 }
