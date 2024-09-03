@@ -105,6 +105,12 @@ class AuthController extends Controller
                         'refresh_token' => $encrypted_refresh_token,
                         'refresh_token_exp' => $exp_date_refresh_token
                     ]);
+
+                    return response()->json([
+                        'access_token' => $token,
+                        'access_token_exp' => $access_token_exp_date,
+                        'success' => true,
+                        'message' => 'Login credential is valid'], 200)->withCookie(cookie('token', $token, config('jwt.ttl'), '/', null, true, true, false, 'Strict'));
                 }
             }
             
@@ -114,7 +120,7 @@ class AuthController extends Controller
                 'refresh_token' => $refresh_token,
                 'refresh_token_exp' => $refresh_token_exp_date,
                 'success' => true,
-                'message' => 'Login credential is valid'], 200);
+                'message' => 'Login credential is valid'], 200)->withCookie(cookie('token', $token, config('jwt.ttl'), '/', null, true, true, false, 'Strict'));
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -256,7 +262,7 @@ class AuthController extends Controller
             return response()->json([
                 'status_code' => 200,
                 'message' => 'user logout and access token will be blacklist'
-            ], 200);
+            ], 200)->withCookie(cookie()->forget('token'));
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
