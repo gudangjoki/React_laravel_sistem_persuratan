@@ -17,7 +17,6 @@ Route::middleware(['auth.jwt', 'cors'])->group(function() {
 });
 
 Route::middleware(['parse.jwt', 'cors'])->group(function() {
-    Route::post('/forget_password', [AuthController::class, 'forget_password']);
     Route::post('/check_otp', [AuthController::class, 'check_otp']);
     Route::post('/refresh_token', [AuthController::class, 'refresh_token']);
     Route::delete('/logout', [AuthController::class, 'logout']);
@@ -37,3 +36,8 @@ Route::middleware(['parse.jwt', 'cors'])->group(function() {
 
     Route::get('/me', [DashboardController::class, 'getSelfAccountInformation']);
 });
+
+Route::middleware(['cors'])->group(function() {
+    Route::post('/forget_password', [AuthController::class, 'forget_password']);
+});
+

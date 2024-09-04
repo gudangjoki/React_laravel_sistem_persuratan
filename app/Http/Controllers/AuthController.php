@@ -133,6 +133,13 @@ class AuthController extends Controller
 
         $email = $validate['email'];
 
+        if (Cache::get('otp')) {
+            return response()->json([
+                'message' => 'OTP has been sent to your email or wait 2 minutes for resend OTP',
+                'success' => false
+            ], 403);
+        }
+
         $email_db = User::where('email', $email)->first()->email;
         if ($email == $email_db) {
             $otp = '594805';
@@ -141,11 +148,17 @@ class AuthController extends Controller
 
             Cache::put('otp', $otp, now()->addMinutes(2));
             Cache::put('reset_email', $email, now()->addMinutes(2));
-
-            return response()->json(['message' => 'OTP sent to email'], 200);
+            
+            return response()->json([
+                'message' => 'OTP sent to email',
+                'success' => true
+            ], 200);
         } else {
             // return cant find email
-            return response()->json(['message' => 'Email not found'], 404);
+            return response()->json([
+                'message' => 'Email not found',
+                'success' => false
+            ], 404);
         }
     }
 
