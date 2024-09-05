@@ -16,28 +16,28 @@ class LetterManagementController extends Controller
     public function get_all_keywords(Request $request) {
         $index = $request->query('index') ?? 0;
         $search = $request->query('search') ?? '';
-
-        if ($search !== '') {
-            $keywords = Keyword::where('keyword_name', 'like', $search . '%');
+    
+        $keywords = Keyword::query();
+    
+        if (!empty($search)) {
+            $keywords->where('keyword_name', 'like', $search . '%');
         }
-
-        
-        if ($index > 0) {
-            $keywords = $keywords->offset($index . '0')->limit(10)->get();
-        } else if ($index == 0) {
-            $keywords = $keywords->offset(0)->limit(10)->get();
+    
+        if ($index >= 0) {
+            $keywords = $keywords->offset($index * 10)->limit(10)->get();
         } else {
             return response()->json([
                 'success' => false,
-                'error' => "index query param can't be less than zero or minus value"
+                'error' => "Index query param can't be less than zero or a negative value"
             ], 400);
         }
-
+    
         return response()->json([
             'index' => $index,
             'keywords' => $keywords
         ], 200);
     }
+    
 
     public function create_letter(Request $request) {
         $payload = $request->get('jwt_payload');
@@ -161,4 +161,12 @@ class LetterManagementController extends Controller
         return response()->json(['index' => $index, 'data' => $keywords], 200);
     }
     
+    function getAllLetterTypes() {
+        $types = DB::table('letter_types')->get();
+
+        return response()->json([
+            'success' => true,
+            'types' => $types
+        ], 200);
+    }
 }

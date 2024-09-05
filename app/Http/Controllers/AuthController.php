@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Str;
 
@@ -127,11 +128,18 @@ class AuthController extends Controller
     }
 
     public function forget_password(Request $request) {
-        $validate = $request->validate([
+        $validator = Validator::make($request->all(), [
             'email' => 'required|email'
         ]);
+        
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Email address required',
+                'success' => false
+            ], 403);
+        }
 
-        $email = $validate['email'];
+        $email = $request->email;
 
         if (Cache::get('otp')) {
             return response()->json([
@@ -140,14 +148,14 @@ class AuthController extends Controller
             ], 403);
         }
 
-        $email_db = User::where('email', $email)->first()->email;
-        if ($email == $email_db) {
+        $email_db = User::where('email', $email)->first();
+        if ($email_db) {
             $otp = '594805';
             $new_otp = new OtpForgetPassword($email, $otp);
             Mail::to($email)->send($new_otp);
 
             Cache::put('otp', $otp, now()->addMinutes(2));
-            Cache::put('reset_email', $email, now()->addMinutes(2));
+            Cache::put('reset_email', $email);
             
             return response()->json([
                 'message' => 'OTP sent to email',
@@ -182,21 +190,26 @@ class AuthController extends Controller
     public function change_password(Request $request) {
         $data = $request->validate([
             'password' => 'required|min:8|max:20',
-            'confirmed_password' => 'required|min:8|max:20'
+            // 'otp' => 'required|integer',
+            // 'confirmed_password' => 'required|min:8|max:20'
         ]);
+
+        // if (!$data['otp']) {
+        //     return response()->json(['message' => 'Forbidden'], 403);
+        // }
 
         $regex = "/^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+{}\[\]:;\"'<>,.?\/\\|-]).{1,}$/";
         $pass = $data['password'];
-        $confirmed_pass = $data['confirmed_password'];
+        // $confirmed_pass = $data['confirmed_password'];
 
         $passwordRequirement = preg_match($regex, $pass);
         if(!$passwordRequirement) {
             return redirect()->back()->json(['error' => 'Masukkan password dengan syarat kombinasi huruf besar, kecil, angka, tanda baca, dan terdapat minimal 1 karakter'], 400);
         }
 
-        if ($pass != $confirmed_pass) {
-            return redirect()->back()->json(['message' => 'please type same password with confirmed'], 400);
-        }
+        // if ($pass != $confirmed_pass) {
+        //     return redirect()->back()->json(['message' => 'please type same password with confirmed'], 400);
+        // }
 
         $email = Cache::get('reset_email', 'default');
 
@@ -221,7 +234,6 @@ class AuthController extends Controller
     }
 
     public function refresh_token(Request $request) {
-        // if header access token not same with updated one, return token will be invalid 401
         $refresh_token_from_request = $request->refresh_token;
         if (!$refresh_token_from_request) {
             return response()->json(['error' => 'refresh token is missing'], 400);

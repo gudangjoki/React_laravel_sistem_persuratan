@@ -17,7 +17,6 @@ Route::middleware(['auth.jwt', 'cors'])->group(function() {
 });
 
 Route::middleware(['parse.jwt', 'cors'])->group(function() {
-    Route::post('/check_otp', [AuthController::class, 'check_otp']);
     Route::post('/refresh_token', [AuthController::class, 'refresh_token']);
     Route::delete('/logout', [AuthController::class, 'logout']);
 
@@ -26,7 +25,8 @@ Route::middleware(['parse.jwt', 'cors'])->group(function() {
     Route::put('/letter/{uuid}', [LetterManagementController::class, 'edit_detail']);
     Route::post('/letter', [LetterManagementController::class, 'create_letter']);
     Route::get('/letters', [LetterManagementController::class, 'get_all_letters']);
-    
+
+    Route::get('/letter_types', [LetterManagementController::class, 'getAllLetterTypes']);
     Route::get('/count_letter', [DashboardController::class, 'checkCountEachLetterType']);
     Route::get('/letters/{letter_id_type}', [DashboardController::class, 'getLetterByTypeParameterUrl']);
 
@@ -39,5 +39,7 @@ Route::middleware(['parse.jwt', 'cors'])->group(function() {
 
 Route::middleware(['cors'])->group(function() {
     Route::post('/forget_password', [AuthController::class, 'forget_password']);
+    Route::post('/check_otp', [AuthController::class, 'check_otp']);
+    Route::put('/change_password', [AuthController::class, 'change_password']);
 });
 
