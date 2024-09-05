@@ -8,6 +8,7 @@ use App\Models\Letter;
 use App\Models\LetterInformation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -43,7 +44,7 @@ class LetterManagementController extends Controller
         $payload = $request->get('jwt_payload');
 
         $validate = $request->validate([
-            'letter_id' => 'required|string|min:16|max:16',
+            'letter_no' => 'required|string|min:16|max:16',
             'letter_title' => 'required|string',
             'letter_id_type' => 'required|integer',
             'letter_keywords' => 'required|array',
@@ -74,7 +75,7 @@ class LetterManagementController extends Controller
 
             $new_letter->keywords()->attach($validate['letter_keywords'], ['letter_id' => $new_letter->letter_id]);
     
-            return response()->json(['message' => 'Success create letter'], 200);
+            return response()->json(['success' => true, 'message' => 'Success create letter'], 200);
 
         } catch(\Exception $e) {
     
@@ -168,5 +169,33 @@ class LetterManagementController extends Controller
             'success' => true,
             'types' => $types
         ], 200);
+    }
+
+    function uploadFile(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|mimes:pdf|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()->first()], 400);
+        }
+
+        if ($request->hasFile('file')) {
+            // Get the uploaded file
+            $file = $request->file('file');
+
+            // Define the file name and store it in the "uploads" directory
+            $filePath = $file->storeAs('uploads', time() . '_' . $file->getClientOriginalName(), 'public');
+
+            // Return success response with file path
+            return response()->json([
+                'success' => true,
+                'message' => 'File uploaded successfully',
+                'file_path' => Storage::url($filePath),
+            ]);
+        }
+
+        // If file is not provided
+        return response()->json(['error' => 'No file uploaded'], 400);
     }
 }

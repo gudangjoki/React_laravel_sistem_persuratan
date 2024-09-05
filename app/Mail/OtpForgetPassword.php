@@ -27,7 +27,7 @@ class OtpForgetPassword extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Otp Forget Password Aplikasi BRI Lestari',
+            subject: 'Otp Forget Password Sistem Manajemen Surat',
         );
     }
 

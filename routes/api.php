@@ -35,6 +35,8 @@ Route::middleware(['parse.jwt', 'cors'])->group(function() {
     Route::get('/permissions', [RoleManagementController::class, 'getAllPermissions']);
 
     Route::get('/me', [DashboardController::class, 'getSelfAccountInformation']);
+
+    Route::post('/upload', [LetterManagementController::class, 'uploadFile']);
 });
 
 Route::middleware(['cors'])->group(function() {

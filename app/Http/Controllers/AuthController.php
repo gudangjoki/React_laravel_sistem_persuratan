@@ -150,7 +150,7 @@ class AuthController extends Controller
 
         $email_db = User::where('email', $email)->first();
         if ($email_db) {
-            $otp = '594805';
+            $otp = random_int(100000, 999999);
             $new_otp = new OtpForgetPassword($email, $otp);
             Mail::to($email)->send($new_otp);
 
