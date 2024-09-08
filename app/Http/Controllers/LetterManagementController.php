@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Keyword;
 use App\Models\Letter;
 use App\Models\LetterInformation;
+use App\Models\LetterKeyword;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -158,8 +159,28 @@ class LetterManagementController extends Controller
         }
     
         $keywords = $query->get();
+
+        $letterDetails = [];
+
+        foreach ($keywords as $key) {
+            $letter_keys = LetterKeyword::where('letter_id', $key->letter_id)->pluck('keyword_name');
+            $letterDetail = new \App\LetterDetail(
+                $key->letter_id,
+                $key->letter_no,
+                $key->letter_title,
+                $key->letter_path,
+                $key->letter_type,
+                $key->author_email,
+                $key->author_name,
+                $key->author_username,
+                $letter_keys,
+                $key->letter_created_at
+            );
+        
+            $letterDetails[] = $letterDetail;
+        }
     
-        return response()->json(['index' => $index, 'data' => $keywords], 200);
+        return response()->json(['index' => $index, 'data' => $letterDetails], 200);
     }
     
     function getAllLetterTypes() {

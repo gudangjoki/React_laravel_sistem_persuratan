@@ -23,3 +23,6 @@ dashboard count letter:
 SELECT COUNT(letter_id) AS total_letter_type, letter_type
 FROM view_letter_combined
 GROUP BY letter_type;
+
+
+CREATE VIEW view_letter_keywords AS SELECT A.letter_id, B.keyword_name FROM `letter_keywords` A LEFT JOIN keywords B on A.keyword_id = B.id
