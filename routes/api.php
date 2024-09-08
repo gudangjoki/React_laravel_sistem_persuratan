@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FileController;
 use App\Http\Controllers\LetterManagementController;
 use App\Http\Controllers\RoleManagementController;
 use Illuminate\Http\Request;
@@ -44,4 +45,6 @@ Route::middleware(['cors'])->group(function() {
     Route::post('/check_otp', [AuthController::class, 'check_otp']);
     Route::put('/change_password', [AuthController::class, 'change_password']);
 });
+
+Route::get('download/{filename}', [FileController::class, 'downloadLetterPdf']);
 
