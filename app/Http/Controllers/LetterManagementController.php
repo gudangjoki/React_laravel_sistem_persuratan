@@ -87,7 +87,9 @@ class LetterManagementController extends Controller
     public function view_detail(Request $request, string $uuid) {
         $letter = Letter::where('letter_id', $uuid)->first();
 
-        return response()->json(['data' => $letter], 200);
+        $keywordsLetter = LetterKeyword::where('letter_id', $uuid)->get(['id', 'keyword_name']);
+
+        return response()->json(['data' => $letter, 'keywords_data' => $keywordsLetter], 200);
     }
 
     public function edit_detail(Request $request, string $uuid) {
@@ -135,12 +137,12 @@ class LetterManagementController extends Controller
     
         if ($keyword != '') {
             $query->where(function($q) use ($keyword) {
-                $q->where('letter_title', 'like', $keyword . '%')
-                  ->orWhere('letter_no', 'like', $keyword . '%')
-                  ->orWhere('author_email', 'like', $keyword . '%')
-                  ->orWhere('author_name', 'like', $keyword . '%')
-                  ->orWhere('author_username', 'like', $keyword . '%');
-            });
+                $q->where('letter_title', 'like', '%' . $keyword . '%')
+                    ->orWhere('letter_no', 'like', '%' . $keyword . '%')
+                    ->orWhere('author_email', 'like', '%' . $keyword . '%')
+                    ->orWhere('author_name', 'like', '%' . $keyword . '%')
+                    ->orWhere('author_username', 'like', '%' . $keyword . '%');
+          });
         }
     
         if ($type != '') {

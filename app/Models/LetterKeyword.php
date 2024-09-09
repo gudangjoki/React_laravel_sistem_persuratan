@@ -11,6 +11,6 @@ class LetterKeyword extends Model
 
     public function __construct()
     {
-        $this->setTable('view_letter_keywords');
+        $this->setTable('view_letter_keywords_with_id');
     }
 }
