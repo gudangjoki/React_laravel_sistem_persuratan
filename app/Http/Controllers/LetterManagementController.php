@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\LetterType;
 use App\Models\Keyword;
 use App\Models\Letter;
 use App\Models\LetterInformation;
@@ -83,9 +84,48 @@ class LetterManagementController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
+    private function binarySearch(array $data, $targetId) {
+        $low = 0;
+        $high = count($data) - 1;
+    
+        while ($low <= $high) {
+            $mid = intdiv($low + $high, 2);
+    
+            if ($data[$mid]->id === $targetId) {
+                return $data[$mid];
+            }
+    
+            if ($data[$mid]->id < $targetId) {
+                $low = $mid + 1;
+            } else {
+                $high = $mid - 1;
+            }
+        }
+    
+        return null;
+    }
     
     public function view_detail(Request $request, string $uuid) {
         $letter = Letter::where('letter_id', $uuid)->first();
+
+        $data = DB::table('letter_types')->get(['id', 'letter_type_name']);
+
+        // foreach ($data as $d) {
+        //     if ($d->id === $letter->letter_id_type) {
+        //         $letter->letter_id_type = $d->letter_type_name;
+        //         break;
+        //     }
+        // }
+
+        $dataArray = $data->toArray();
+
+        $letterType = $this->binarySearch($dataArray, $letter->letter_id_type);
+    
+        if ($letterType) {
+            $object_type = new LetterType($letterType->id, $letterType->letter_type_name);
+            $letter->letter_id_type = $object_type;
+        }
 
         $keywordsLetter = LetterKeyword::where('letter_id', $uuid)->get(['id', 'keyword_name']);
 
@@ -185,8 +225,15 @@ class LetterManagementController extends Controller
         return response()->json(['index' => $index, 'data' => $letterDetails], 200);
     }
     
-    function getAllLetterTypes() {
-        $types = DB::table('letter_types')->get();
+    function getAllLetterTypes(Request $request) {
+        $ignore_selected_value = $request->query('selected') ?? -1;
+
+        if ($ignore_selected_value !== -1) {
+            $types = DB::table('letter_types')->where('id', '!=', $ignore_selected_value)->get();
+        } else {
+            $types = DB::table('letter_types')->get();
+        }
+
 
         return response()->json([
             'success' => true,
