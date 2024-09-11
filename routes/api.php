@@ -31,7 +31,7 @@ Route::middleware(['parse.jwt', 'cors'])->group(function() {
     Route::get('/count_letter', [DashboardController::class, 'checkCountEachLetterType']);
     Route::get('/letters/{letter_id_type}', [DashboardController::class, 'getLetterByTypeParameterUrl']);
 
-    Route::post('/role', [RoleManagementController::class], 'createNewRole');
+    Route::post('/role', [RoleManagementController::class, 'createNewRole']);
     Route::get('/roles', [RoleManagementController::class, 'getAllRoles']);
     Route::get('/permissions', [RoleManagementController::class, 'getAllPermissions']);
 

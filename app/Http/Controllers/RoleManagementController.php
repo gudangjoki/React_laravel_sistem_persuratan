@@ -5,29 +5,44 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Permission;
 use App\Models\Role;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class RoleManagementController extends Controller
 {
     public function createNewRole(Request $request) {
+        // Validasi input dari request
         $validate = $request->validate([
             'role_name' => 'required|string',
             'permission_id' => 'required|array'
         ]);
-
-        $role = new Role();
-        $role->role_name = $validate['role_name'];
-
-        $latest_role_id = $role->orderBy('id', 'DESC')->first();
-
-        $role->permissions()->attach($validate['permission_id'], ['role_id' => $latest_role_id + 1]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'success create new role'
-        ], 200);
+    
+        try {
+            // Buat role baru
+            $role = new Role;
+            $role->role_name = $validate['role_name'];
+            
+            // Simpan role ke dalam database terlebih dahulu
+            $role->save();
+        
+            // Setelah role disimpan, dapatkan ID role dan attach permissions
+            $role->permissions()->attach($validate['permission_id']);
+        
+            // Kembalikan response jika sukses
+            return response()->json([
+                'success' => true,
+                'message' => 'Success create new role'
+            ], 200);
+        } catch (\Exception $e) {
+            // Kembalikan response jika terjadi error
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
+    
 
     public function getRolesDropdown(Request $request) {
         $index = $request->query('index') ?? 0;
@@ -126,7 +141,7 @@ class RoleManagementController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], 200);
+            ], 500);
         }
     }
 }
